@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const { customAlphabet } = require("nanoid");
 const fs = require("fs");
+const mongoose = require("mongoose");
 
 const app = express();
 const port = 3000;
@@ -34,7 +35,12 @@ const generateShortUrl = customAlphabet(
 app.use(express.json());
 
 
-app.post("/api/shorten", (req, res) => {
+const URL=mongoose.Schema({
+  short_url:String,
+  destination_url:String,
+})
+const Url=mongoose.model("Url",URL)
+app.post("/api/shorten", async(req, res) => {
     const { destination_url } = req.body;
   
     if (!destination_url) {
@@ -43,10 +49,12 @@ app.post("/api/shorten", (req, res) => {
   
     const short_url = generateShortUrl();
     urlStore[short_url] = destination_url;
+    const url=new Url({short_url,destination_url})
   
+    await url.save()
     writeUrlData(urlStore); // Update the file with the new data
   
-    res.status(201).json({ short_url, destination_url });
+    res.status(201).json({ short_url:"http://localhost:3000/"+short_url, destination_url });
   });
 
 // Route to handle redirection from short URL to the original URL.
@@ -60,6 +68,8 @@ app.get("/:short_url", (req, res) => {
 
   res.redirect(destination_url);
 });
+
+mongoose.connect("mongodb+srv://rajnishtripathi2001:victor$rct1A@codiopy.ewnwvnb.mongodb.net/?retryWrites=true&w=majority").then(()=>{console.log("hdfjidjfe")})
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
